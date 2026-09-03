@@ -1,0 +1,6 @@
+2026-08-13 — Revisão premium da tela principal concluída localmente.
+- Responsividade corrigida em 390 px, 768 px e 1440 px.
+- Login, cabeçalho, KPIs, mapa, painel lateral, cartões, diálogos e estados refinados.
+- Textos operacionais revisados.
+- Funcionalidade e contratos de API preservados.
+- Publicação ainda não realizada.
