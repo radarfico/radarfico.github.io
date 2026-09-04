@@ -299,12 +299,37 @@ async function publicCcoOperations(request, env) {
   }
 }
 
+function weatherReply(request, body, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...HEADERS, ...cors(request), 'cache-control': 'public, max-age=900' } });
+}
+function forecastGrid() {
+  const points = [], step = 0.12;
+  for (let lat = -14.62; lat <= -13.86; lat += step) for (let lng = -51.62; lng <= -49.02; lng += step) points.push([Number(lat.toFixed(3)), Number(lng.toFixed(3))]);
+  return { step, points };
+}
+async function weatherForecast(request) {
+  const hourBucket = Math.floor(Date.now() / (15 * 60 * 1000));
+  const cacheKey = new Request(`https://radarfico-weather-cache.local/today/${hourBucket}`);
+  const cached = await caches.default.match(cacheKey); if (cached) return cached;
+  try {
+    const { step, points } = forecastGrid(), latitude = points.map((p) => p[0]).join(','), longitude = points.map((p) => p[1]).join(',');
+    const upstream = await fetch(`https://api.open-meteo.com/v1/ecmwf?latitude=${latitude}&longitude=${longitude}&hourly=precipitation&forecast_days=1&timezone=America%2FFortaleza`);
+    if (!upstream.ok) throw new Error('forecast upstream');
+    const rows = await upstream.json(), list = Array.isArray(rows) ? rows : [rows], first = list[0]?.hourly || {};
+    const body = { ok: true, provider: 'ECMWF IFS HRES via Open-Meteo', updatedAt: now(), refreshSeconds: 900, step, times: first.time || [], points: list.map((row) => ({ latitude: row.latitude, longitude: row.longitude, precipitation: row.hourly?.precipitation || [] })) };
+    const response = weatherReply(request, body); await caches.default.put(cacheKey, response.clone()); return response;
+  } catch {
+    return reply(request, { ok: false, error: 'Previsão de chuva indisponível no momento.' }, 502);
+  }
+}
+
 export async function routeRadar(request, env) {
   const path = new URL(request.url).pathname;
   if (!path.startsWith('/api/v1/radar/') && !path.startsWith('/api/v2/admin/radar/')) return null;
   if (request.method === 'POST' && path === '/api/v1/radar/login') return login(request, env);
   if (request.method === 'GET' && path === '/api/v1/radar/public/state') return publicState(request, env);
   if (request.method === 'GET' && path === '/api/v1/radar/public/cco-operations') return publicCcoOperations(request, env);
+  if (request.method === 'GET' && path === '/api/v1/radar/public/weather-forecast') return weatherForecast(request);
   const user = await authenticate(request, env); if (!user) return reply(request, { ok: false, error: 'Sessão do Radar FICO inválida ou expirada.' }, 401);
   if (request.method === 'POST' && path === '/api/v1/radar/logout') return logout(request, env);
   if (request.method === 'GET' && path === '/api/v1/radar/state') return state(request, env, user);
