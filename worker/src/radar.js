@@ -280,11 +280,31 @@ async function history(request, env, user) {
   return reply(request, { ok: true, serverTime: now(), user: publicUser(user), fronts: await frontData(env, { from, to, companyId, includeAudit: true, limit: 10000 }) });
 }
 
+async function publicCcoOperations(request, env) {
+  try {
+    const ldls = await env.DB.prepare(`SELECT l.id,l.permanent_code,l.km_start,l.km_end,l.work_description,l.requested_start,l.requested_end,r.name AS requester_name,r.company
+      FROM ldl l JOIN requesters r ON r.code=l.requester_code WHERE l.status='active' ORDER BY l.km_start,l.created_at`).all();
+    const ldlLines = await env.DB.prepare(`SELECT ll.ldl_id,ll.line_id FROM ldl_lines ll JOIN ldl l ON l.id=ll.ldl_id WHERE l.status='active'`).all();
+    const circulations = await env.DB.prepare(`SELECT c.id,c.permanent_code,c.km_start,c.km_end,c.line_id,c.direction,c.planned_start,c.planned_end,e.name AS equipment_name
+      FROM circulations c JOIN equipment e ON e.id=c.equipment_id WHERE c.status='authorized' ORDER BY c.km_start,c.authorized_at`).all();
+    const linesByLdl = {};
+    for (const row of ldlLines.results || []) (linesByLdl[row.ldl_id] ||= []).push(row.line_id);
+    return reply(request, {
+      ok: true, updatedAt: now(), refreshSeconds: 15,
+      ldls: (ldls.results || []).map((item) => ({ ...item, lines: linesByLdl[item.id] || [] })),
+      circulations: circulations.results || []
+    });
+  } catch {
+    return reply(request, { ok: false, error: 'Dados operacionais CCO indisponíveis.' }, 502);
+  }
+}
+
 export async function routeRadar(request, env) {
   const path = new URL(request.url).pathname;
   if (!path.startsWith('/api/v1/radar/') && !path.startsWith('/api/v2/admin/radar/')) return null;
   if (request.method === 'POST' && path === '/api/v1/radar/login') return login(request, env);
   if (request.method === 'GET' && path === '/api/v1/radar/public/state') return publicState(request, env);
+  if (request.method === 'GET' && path === '/api/v1/radar/public/cco-operations') return publicCcoOperations(request, env);
   const user = await authenticate(request, env); if (!user) return reply(request, { ok: false, error: 'Sessão do Radar FICO inválida ou expirada.' }, 401);
   if (request.method === 'POST' && path === '/api/v1/radar/logout') return logout(request, env);
   if (request.method === 'GET' && path === '/api/v1/radar/state') return state(request, env, user);
