@@ -1,10 +1,23 @@
 const localApiPort = new URLSearchParams(location.search).get('apiPort') || '8791';
 export const API = /^(?:localhost|127\.0\.0\.1)$/.test(location.hostname) ? `http://127.0.0.1:${localApiPort}` : 'https://radarfico-api.automacaofico.workers.dev';
-export const AXIS_URL = './assets/data/fico-axis-full.json';
+// Static assets must resolve from site root. Relative paths break inside
+// /operacao, /sala and /historico.
+export const AXIS_URL = '/assets/data/fico-axis-full.json';
 export const RISK = { low:{label:'Baixo',color:'#2f8f68'},moderate:{label:'Moderado',color:'#e0b02f'},high:{label:'Alto',color:'#ed7b28'},critical:{label:'Crítico',color:'#d63c32'} };
 export const STATUS = { scheduled:'Programada',active:'Em andamento',paused:'Pausada',awaiting_definition:'Aguardando definição',closed:'Encerrada',cancelled:'Cancelada',not_located:'Não localizada',stopped:'Paralisada pela FICO' };
 export const PACKAGES=[{id:'P01',start:0,end:38100,color:'#0075a9'},{id:'P02',start:38100,end:71300,color:'#55a646'},{id:'P03',start:71300,end:104500,color:'#ee7623'},{id:'P04',start:104500,end:131260,color:'#7b61a8'},{id:'P05',start:131260,end:167300,color:'#008a8a'},{id:'P06',start:167300,end:225000,color:'#c34f5d'},{id:'P07',start:225000,end:239950,color:'#657583'},{id:'P08',start:239950,end:292260,color:'#b27a19'}];
 export const $=(id)=>document.getElementById(id);
+export function localDate(value=new Date()){
+  const d=new Date(value);
+  return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+export async function loadAxis(){
+  const response=await fetch(AXIS_URL);
+  if(!response.ok)throw new Error('Não foi possível carregar eixo ferroviário.');
+  const data=await response.json();
+  if(!Array.isArray(data.points)||!data.points.length)throw new Error('Eixo ferroviário indisponível.');
+  return data.points;
+}
 export function formatKm(value){const n=Math.max(0,Math.round(Number(value)||0));return `${Math.floor(n/1000)}+${String(n%1000).padStart(3,'0')}`;}
 export function parseKm(value){const s=String(value).trim().replace(',','.');if(/^\d+\+\d{1,3}$/.test(s)){const [k,m]=s.split('+');return Number(k)*1000+Number(m);}const n=Number(s);return Number.isFinite(n)?(n<1000?n*1000:n):null;}
 export function fmtDate(value){return value?new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(value)):'—';}
@@ -22,4 +35,4 @@ export function addRadarLayers(map,axis,fronts,ldls=[]){const t=axisTools(axis),
   return t;
 }
 export function fitFront(map,tools,front){const bounds=new maplibregl.LngLatBounds();front.segments.forEach(s=>tools.slice(s.kmStart,s.kmEnd).forEach(c=>bounds.extend(c)));if(!bounds.isEmpty())map.fitBounds(bounds,{padding:window.innerWidth<700?55:110,maxZoom:14,duration:700});}
-export function installPwa(){if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+export function installPwa(){if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{});}

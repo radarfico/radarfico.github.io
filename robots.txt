@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://radarfico.github.io/sitemap.xml

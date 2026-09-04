@@ -4,3 +4,9 @@
 - Textos operacionais revisados.
 - Funcionalidade e contratos de API preservados.
 - Publicação ainda não realizada.
+
+2026-09-04 — Revisão operacional e pública concluída.
+- Caminho compartilhado do eixo ferroviário corrigido para páginas internas.
+- Gestão à Vista ganhou estado de falha do mapa e estilo próprio carregado por CSS.
+- Página pública recebeu foco visível, tipografia funcional maior, conteúdo explicativo, FAQ e metadados.
+- robots.txt e sitemap.xml adicionados para descoberta somente da página pública.
