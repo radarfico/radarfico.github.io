@@ -621,6 +621,8 @@ label {
 .key-line.packages { background: linear-gradient(90deg,#0075a9 0 12.5%,#55a646 12.5% 25%,#ee7623 25% 37.5%,#7b61a8 37.5% 50%,#008a8a 50% 62.5%,#c34f5d 62.5% 75%,#657583 75% 87.5%,#b27a19 87.5%); }
 .key-line.work { background: #e0b02f; box-shadow: 0 0 0 2px #fff; }
 .key-line.dashed { background: repeating-linear-gradient(90deg,#e0b02f 0 7px,transparent 7px 12px); }
+.key-line.ldl { flex-basis: 1.1rem; background: repeating-linear-gradient(90deg,#9d1d1d 0 5px,transparent 5px 8px); }
+.key-line.circulation { flex-basis: 1.1rem; background: repeating-linear-gradient(90deg,#7350a8 0 4px,transparent 4px 7px); }
 .map-layer-toggles { display: flex; gap: 0.3rem; margin-top: 0.55rem; }
 .map-layer-toggles button { min-height: 1.9rem; padding: 0 0.5rem; background: #e7f1f2; color: #08283d; font-size: 0.62rem; }
 .map-layer-toggles button.is-off { background: transparent; color: #d5e7ea; border: 1px solid #79a6ac; text-decoration: line-through; }
